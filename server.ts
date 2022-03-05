@@ -1,7 +1,10 @@
-import 'dotenv/config';
-import express from 'express';
-import db from './db';
-import { getDBQueryArgs, CRUDMethods } from './src/utils/database';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import db from "./db";
+import {
+  dbQueryDelete, dbQueryGet, dbQueryPost, dbQueryPut,
+} from "./src/utils/database";
 
 const app = express();
 
@@ -12,50 +15,61 @@ console.log(process.env.USER);
 
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log('middleware');
+  console.log("middleware");
   next();
 });
 
-app.get('/api/v1/phones', async (req, res) => {
-  const allPhones = await db.query('SELECT * FROM phones');
+app.use(cors());
+
+app.get("/api/v1/phones", async (_, res) => {
+  const query = dbQueryGet();
+  const allPhones = await db.query(query);
+
   res.status(200).json({
-    status: 'success',
+    status: "success",
     data: {
       phones: allPhones.rows,
     },
   });
 });
 
-app.get('/api/v1/phones/:searchTerm', async (req, res) => {
-  const { searchTerm } = req.params;
-  const [query, param] = getDBQueryArgs(searchTerm, CRUDMethods.GET);
-  const queryResult = await db.query(query, [param]);
+app.get("/api/v1/phones/:searchParam", async (req, res) => {
+  const { searchParam } = req.params;
+  const query = dbQueryGet(searchParam);
+  const queryResult = await db.query(query, [searchParam.toLowerCase().replace(/\s/g, "")]);
 
   res.status(200).json({
-    status: 'success',
-    data: queryResult.rows,
+    status: "success",
+    data: {
+      phones: queryResult.rows,
+    },
   });
 });
 
-app.post('/api/v1/phones', async (req, res) => {
-  console.log(req.body);
-  const { brand, model, priceRange } = req.body;
-  db.query('INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3)', [brand, model, priceRange]);
+app.post("/api/v1/phones", async (req, res) => {
+  const [query, values] = dbQueryPost(req.body);
+  db.query(query, values);
+
   res.status(201).json({
-    status: 'success',
+    status: "success",
   });
 });
 
-app.put('/api/v1/phones/:id', (req, res) => {
-  console.log(req.body);
+app.put("/api/v1/phones", (req, res) => {
+  const [query, values] = dbQueryPut(req.body);
+  db.query(query, values);
+
+  res.status(200).json({
+    status: "succes",
+  });
 });
 
-app.delete('/api/v1/phones/:deleteParam', async (req, res) => {
-  const { deleteParam } = req.params;
-  const [query, param] = getDBQueryArgs(deleteParam, CRUDMethods.DELETE);
-  const queryResult = await db.query(query, [param]);
-  console.log(queryResult);
+app.delete("/api/v1/phones", async (req, res) => {
+  const query = dbQueryDelete();
+  console.log(query, req.body);
+  db.query(query, [req.body.id]);
+
   res.status(200).json({
-    status: 'success',
+    status: "success",
   });
 });

@@ -10,7 +10,3 @@ const query = (
 export default {
   query,
 };
-
-// module.exports = {
-//   query: (text: string, params: string) => pool.query(text, params),
-// };
