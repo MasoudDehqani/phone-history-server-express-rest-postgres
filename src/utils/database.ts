@@ -17,14 +17,15 @@ enum Tables {
 }
 
 export const dbQueryGet = (param?: string) => {
-  if (param) return `SELECT * FROM ${Tables.PHONES} WHERE REPLACE(LOWER(brand), ' ', '' ) = $1 OR model = $1 OR price_range::text = $1`;
+  if (param) return `SELECT * FROM ${Tables.PHONES} WHERE REPLACE(LOWER(brand), ' ', '' ) = $1 OR REPLACE(LOWER(model), ' ', '' ) = $1 OR price_range::text = $1`;
   return `SELECT * FROM ${Tables.PHONES}`;
 };
 
 export const dbQueryPost = (body: BodyType) : [string, (string | number)[]] => {
   const { brand, model, priceRange } = body;
-  const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3)";
+  const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3) RETURNING id";
   const values = [brand, model, priceRange];
+  console.log(typeof priceRange);
   return [query, values];
 };
 

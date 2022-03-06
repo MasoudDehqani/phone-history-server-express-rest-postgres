@@ -48,10 +48,13 @@ app.get("/api/v1/phones/:searchParam", async (req, res) => {
 
 app.post("/api/v1/phones", async (req, res) => {
   const [query, values] = dbQueryPost(req.body);
-  db.query(query, values);
+  const phone = await db.query(query, values);
 
   res.status(201).json({
     status: "success",
+    data: {
+      id: phone.rows[0].id,
+    },
   });
 });
 
