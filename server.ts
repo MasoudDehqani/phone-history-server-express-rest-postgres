@@ -3,7 +3,12 @@ import express from "express";
 import cors from "cors";
 import db from "./db";
 import {
-  dbQueryDelete, dbQueryGet, dbQueryPost, dbQueryPut,
+  dbQueryDelete,
+  dbQueryGetPhones,
+  dbQueryGetReviews,
+  dbQueryPostPhone,
+  dbQueryPostReview,
+  dbQueryPut,
 } from "./src/utils/database";
 
 const app = express();
@@ -22,7 +27,7 @@ app.use((req, res, next) => {
 app.use(cors());
 
 app.get("/api/v1/phones", async (_, res) => {
-  const query = dbQueryGet();
+  const query = dbQueryGetPhones();
   const allPhones = await db.query(query);
 
   res.status(200).json({
@@ -33,10 +38,10 @@ app.get("/api/v1/phones", async (_, res) => {
   });
 });
 
-app.get("/api/v1/phones/:searchParam", async (req, res) => {
-  const { searchParam } = req.params;
-  const query = dbQueryGet(searchParam);
-  const queryResult = await db.query(query, [searchParam.toLowerCase().replace(/\s/g, "")]);
+app.get("/api/v1/phones/:cat", async (req, res) => {
+  const { cat } = req.params;
+  const query = dbQueryGetPhones(cat);
+  const queryResult = await db.query(query, [cat.toLowerCase().replace(/\s/g, "")]);
 
   res.status(200).json({
     status: "success",
@@ -46,14 +51,39 @@ app.get("/api/v1/phones/:searchParam", async (req, res) => {
   });
 });
 
+app.get("/api/v1/reviews/:cat", async (req, res) => {
+  const { cat } = req.params;
+  const query = dbQueryGetReviews(cat);
+  const reviews = await db.query(query, [cat]);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      reviews: reviews.rows,
+    },
+  });
+});
+
 app.post("/api/v1/phones", async (req, res) => {
-  const [query, values] = dbQueryPost(req.body);
+  const [query, values] = dbQueryPostPhone(req.body);
   const phone = await db.query(query, values);
 
   res.status(201).json({
     status: "success",
     data: {
       id: phone.rows[0].id,
+    },
+  });
+});
+
+app.post("/api/v1/reviews/:phoneId", async (req, res) => {
+  const [query, values] = dbQueryPostReview(req.body, req.params.phoneId);
+  const reviewId = await db.query(query, values);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      reviewId: reviewId.rows[0],
     },
   });
 });
