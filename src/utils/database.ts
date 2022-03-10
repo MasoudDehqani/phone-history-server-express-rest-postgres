@@ -24,11 +24,11 @@ enum Tables {
 
 export const dbQueryGetPhones = (param?: string) => {
   if (param) return `SELECT * FROM ${Tables.PHONES} WHERE REPLACE(LOWER(brand), ' ', '' ) = $1 OR REPLACE(LOWER(model), ' ', '' ) = $1 OR price_range::text = $1`;
-  return `SELECT * FROM ${Tables.PHONES}`;
+  return `SELECT id, model, brand, price_range, ROUND(AVG(rate), 1) AS avg_rate, (SELECT COUNT(review_id)::INT FROM reviews WHERE phone_id = id) AS reviews_count FROM phones p LEFT JOIN reviews ON id = phone_id GROUP BY p.id, p.model, p.brand, p.price_range`;
 };
 
 export const dbQueryGetReviews = (param: string) => {
-  const query = `SELECT brand, model, review_text, rate, review_id FROM phones INNER JOIN reviews ON id = phone_id WHERE phone_id = $1`;
+  const query = `SELECT brand, model, review_text, rate, review_id FROM phones LEFT JOIN reviews ON id = phone_id WHERE id = $1`;
   return query;
 };
 
@@ -36,7 +36,7 @@ export const dbQueryPostPhone = (body: PhoneBodyType) : [string, (string | numbe
   const { brand, model, priceRange } = body;
   const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3) RETURNING id";
   const values = [brand, model, priceRange];
-  console.log(typeof priceRange);
+  // console.log(typeof priceRange);
   return [query, values];
 };
 

@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3006;
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
-console.log(process.env.USER);
+// console.log(process.env.USER);
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -51,14 +51,17 @@ app.get("/api/v1/phones/:cat", async (req, res) => {
   });
 });
 
-app.get("/api/v1/reviews/:cat", async (req, res) => {
-  const { cat } = req.params;
-  const query = dbQueryGetReviews(cat);
-  const reviews = await db.query(query, [cat]);
+app.get("/api/v1/reviews/:phoneId", async (req, res) => {
+  const { phoneId } = req.params;
+  const query = dbQueryGetReviews(phoneId);
+  const reviews = await db.query(query, [phoneId]);
 
   res.status(200).json({
     status: "success",
     data: {
+      brand: reviews.rows[0].brand,
+      model: reviews.rows[0].model,
+      noReview: !reviews.rows[0].review_id,
       reviews: reviews.rows,
     },
   });
@@ -99,7 +102,7 @@ app.put("/api/v1/phones", (req, res) => {
 
 app.delete("/api/v1/phones", async (req, res) => {
   const query = dbQueryDelete();
-  console.log(query, req.body);
+  // console.log(query, req.body);
   db.query(query, [req.body.id]);
 
   res.status(200).json({
