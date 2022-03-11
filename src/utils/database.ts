@@ -20,11 +20,31 @@ type ReviewBodyType = {
 
 enum Tables {
   PHONES = "phones",
+  REVIEWS = "reviews",
+}
+
+enum PhoneTableColumns {
+  ID = "id",
+  MODEL = "model",
+  BRAND = "brand",
+  PRICE_RANGE = "price_range",
+}
+
+enum ReviewsTableColumns {
+  REVIEW_ID = "review_id",
+  PHONE_ID = "phone_id",
+  RATE = "rate",
+  REVIEW_TEXT = "review_text",
 }
 
 export const dbQueryGetPhones = (param?: string) => {
-  if (param) return `SELECT * FROM ${Tables.PHONES} WHERE REPLACE(LOWER(brand), ' ', '' ) = $1 OR REPLACE(LOWER(model), ' ', '' ) = $1 OR price_range::text = $1`;
-  return `SELECT id, model, brand, price_range, ROUND(AVG(rate), 1) AS avg_rate, (SELECT COUNT(review_id)::INT FROM reviews WHERE phone_id = id) AS reviews_count FROM phones p LEFT JOIN reviews ON id = phone_id GROUP BY p.id, p.model, p.brand, p.price_range`;
+  const { PHONES, REVIEWS } = Tables;
+  const { ID, BRAND, MODEL, PRICE_RANGE } = PhoneTableColumns;
+  const { PHONE_ID, RATE, REVIEW_ID } = ReviewsTableColumns;
+  const baseQuery = `SELECT ${ID}, ${MODEL}, ${BRAND}, ${PRICE_RANGE}, ROUND(AVG(${RATE}), 1) AS avg_rate, (SELECT COUNT(${REVIEW_ID})::INT FROM ${REVIEWS} WHERE ${PHONE_ID} = ${ID}) AS reviews_count FROM ${PHONES} p LEFT JOIN ${REVIEWS} ON ${ID} = ${PHONE_ID}`;
+  const groupingQuery = `GROUP BY p.${ID}, p.${MODEL}, p.${BRAND}, p.${PRICE_RANGE}`;
+  if (param) return `${baseQuery} WHERE REPLACE(LOWER(${BRAND}), ' ', '' ) = $1 OR REPLACE(LOWER(${MODEL}), ' ', '' ) = $1 OR ${PRICE_RANGE}::text = $1 ${groupingQuery}`;
+  return `${baseQuery} ${groupingQuery}`;
 };
 
 export const dbQueryGetReviews = (param: string) => {
