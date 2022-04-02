@@ -6,16 +6,16 @@ export enum CRUDMethods {
 }
 
 type PhoneBodyType = {
-  id: string,
+  phoneId: string,
   brand: string,
   model: string,
   priceRange: number
 };
 
 type ReviewBodyType = {
-  id: string,
-  rate: string,
-  review_text: string
+  reviewId: string,
+  reviewRate: string,
+  reviewText: string
 };
 
 enum Tables {
@@ -48,32 +48,36 @@ export const dbQueryGetPhones = (param?: string) => {
 };
 
 export const dbQueryGetReviews = (param: string) => {
-  const query = `SELECT brand, model, review_text, rate, review_id FROM phones LEFT JOIN reviews ON id = phone_id WHERE id = $1`;
+  const { PHONE_ID, BRAND, MODEL } = PhoneTableColumns;
+  const { REVIEW_TEXT, REVIEW_RATE, REVIEW_ID, PHONE_ID_FK } = ReviewsTableColumns;
+  const query = `SELECT ${BRAND}, ${MODEL}, ${REVIEW_TEXT} as "reviewText", ${REVIEW_RATE} as "reviewRate", ${REVIEW_ID} as "reviewId" FROM ${Tables.PHONES} LEFT JOIN ${Tables.REVIEWS} ON ${PHONE_ID} = ${PHONE_ID_FK} WHERE ${PHONE_ID} = $1`;
   return query;
 };
 
 export const dbQueryPostPhone = (body: PhoneBodyType) : [string, (string | number)[]] => {
   const { brand, model, priceRange } = body;
-  const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3) RETURNING phone_id";
+  const { BRAND, MODEL, PRICE_RANGE } = PhoneTableColumns;
+  const query = `INSERT INTO ${Tables.PHONES}(${BRAND}, ${MODEL}, ${PRICE_RANGE}) VALUES ($1, $2, $3) RETURNING phone_id as "phoneId"`;
   const values = [brand, model, priceRange];
   // console.log(typeof priceRange);
   return [query, values];
 };
 
 export const dbQueryPostReview = (body: ReviewBodyType, phoneId: string): [string, string[]] => {
-  const { rate, review_text: reviewText } = body;
-  const query = "INSERT INTO reviews(rate, review_text, phone_id) VALUES ($1, $2, $3) RETURNING review_id";
-  const values = [rate, reviewText, phoneId];
+  const { reviewRate, reviewText } = body;
+  const { REVIEW_RATE, REVIEW_TEXT, PHONE_ID_FK, REVIEW_ID } = ReviewsTableColumns;
+  const query = `INSERT INTO ${Tables.REVIEWS}(${REVIEW_RATE}, ${REVIEW_TEXT}, ${PHONE_ID_FK}) VALUES ($1, $2, $3) RETURNING ${REVIEW_ID} as "reviewId"`;
+  const values = [reviewRate, reviewText, phoneId];
   return [query, values];
 };
 
 export const dbQueryDelete = (): string => {
-  const query = `DELETE FROM ${Tables.PHONES} WHERE phone_id = $1`;
+  const query = `DELETE FROM ${Tables.PHONES} WHERE ${PhoneTableColumns.PHONE_ID} = $1`;
   return query;
 };
 
 export const dbQueryPut = (body: PhoneBodyType): [string, (string | number)[]] => {
-  const bodyKeyValuePairs = Object.entries(body).filter(([key, _]) => key !== "id");
+  const bodyKeyValuePairs = Object.entries(body).filter(([key, _]) => key !== "phoneId");
   const updatedValues = bodyKeyValuePairs.map(([key, _], i) => `${key} = $${i + 2}`);
   const fieldValues = bodyKeyValuePairs.map(([_, value]) => value);
   const updateCommand = updatedValues.reduce((currentValue, acc, index) => {
@@ -82,7 +86,7 @@ export const dbQueryPut = (body: PhoneBodyType): [string, (string | number)[]] =
   });
 
   const query = `UPDATE ${Tables.PHONES} SET ${updateCommand} WHERE id = $1`;
-  const values = [body.id, ...fieldValues];
+  const values = [body.phoneId, ...fieldValues];
 
   return [query, values];
 };

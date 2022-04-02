@@ -55,13 +55,14 @@ app.get("/api/v1/reviews/:phoneId", async (req, res) => {
   const { phoneId } = req.params;
   const query = dbQueryGetReviews(phoneId);
   const reviews = await db.query(query, [phoneId]);
+  console.log(reviews);
 
   res.status(200).json({
     status: "success",
     data: {
       brand: reviews.rows[0].brand,
       model: reviews.rows[0].model,
-      noReview: !reviews.rows[0].review_id,
+      noReview: !reviews.rows[0].reviewId,
       reviews: reviews.rows,
     },
   });
