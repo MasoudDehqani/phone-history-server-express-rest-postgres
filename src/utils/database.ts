@@ -24,7 +24,7 @@ enum Tables {
 }
 
 enum PhoneTableColumns {
-  ID = "id",
+  PHONE_ID = "phone_id",
   MODEL = "model",
   BRAND = "brand",
   PRICE_RANGE = "price_range",
@@ -32,17 +32,17 @@ enum PhoneTableColumns {
 
 enum ReviewsTableColumns {
   REVIEW_ID = "review_id",
-  PHONE_ID = "phone_id",
-  RATE = "rate",
+  PHONE_ID_FK = "phone_id_fk",
+  REVIEW_RATE = "review_rate",
   REVIEW_TEXT = "review_text",
 }
 
 export const dbQueryGetPhones = (param?: string) => {
   const { PHONES, REVIEWS } = Tables;
-  const { ID, BRAND, MODEL, PRICE_RANGE } = PhoneTableColumns;
-  const { PHONE_ID, RATE, REVIEW_ID } = ReviewsTableColumns;
-  const baseQuery = `SELECT ${ID}, ${MODEL}, ${BRAND}, ${PRICE_RANGE}, ROUND(AVG(${RATE}), 1) AS avg_rate, (SELECT COUNT(${REVIEW_ID})::INT FROM ${REVIEWS} WHERE ${PHONE_ID} = ${ID}) AS reviews_count FROM ${PHONES} p LEFT JOIN ${REVIEWS} ON ${ID} = ${PHONE_ID}`;
-  const groupingQuery = `GROUP BY p.${ID}, p.${MODEL}, p.${BRAND}, p.${PRICE_RANGE}`;
+  const { PHONE_ID, BRAND, MODEL, PRICE_RANGE } = PhoneTableColumns;
+  const { PHONE_ID_FK, REVIEW_RATE, REVIEW_ID } = ReviewsTableColumns;
+  const baseQuery = `SELECT ${PHONE_ID} as "phoneId", ${MODEL}, ${BRAND}, ${PRICE_RANGE} as "priceRange", ROUND(AVG(${REVIEW_RATE}), 1) AS "avgRate", (SELECT COUNT(${REVIEW_ID})::INT FROM ${REVIEWS} WHERE ${PHONE_ID_FK} = ${PHONE_ID}) AS "reviewsCount" FROM ${PHONES} p LEFT JOIN ${REVIEWS} ON ${PHONE_ID} = ${PHONE_ID_FK}`;
+  const groupingQuery = `GROUP BY p.${PHONE_ID}, p.${MODEL}, p.${BRAND}, p.${PRICE_RANGE}`;
   if (param) return `${baseQuery} WHERE REPLACE(LOWER(${BRAND}), ' ', '' ) = $1 OR REPLACE(LOWER(${MODEL}), ' ', '' ) = $1 OR ${PRICE_RANGE}::text = $1 ${groupingQuery}`;
   return `${baseQuery} ${groupingQuery}`;
 };
@@ -54,7 +54,7 @@ export const dbQueryGetReviews = (param: string) => {
 
 export const dbQueryPostPhone = (body: PhoneBodyType) : [string, (string | number)[]] => {
   const { brand, model, priceRange } = body;
-  const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3) RETURNING id";
+  const query = "INSERT INTO phones(brand, model, price_range) VALUES ($1, $2, $3) RETURNING phone_id";
   const values = [brand, model, priceRange];
   // console.log(typeof priceRange);
   return [query, values];
@@ -68,7 +68,7 @@ export const dbQueryPostReview = (body: ReviewBodyType, phoneId: string): [strin
 };
 
 export const dbQueryDelete = (): string => {
-  const query = `DELETE FROM ${Tables.PHONES} WHERE id = $1`;
+  const query = `DELETE FROM ${Tables.PHONES} WHERE phone_id = $1`;
   return query;
 };
 

@@ -74,7 +74,7 @@ app.post("/api/v1/phones", async (req, res) => {
   res.status(201).json({
     status: "success",
     data: {
-      id: phone.rows[0].id,
+      phoneId: phone.rows[0].phone_id,
     },
   });
 });
@@ -102,8 +102,7 @@ app.put("/api/v1/phones", (req, res) => {
 
 app.delete("/api/v1/phones", async (req, res) => {
   const query = dbQueryDelete();
-  // console.log(query, req.body);
-  db.query(query, [req.body.id]);
+  db.query(query, [req.body.phoneId]);
 
   res.status(200).json({
     status: "success",
